@@ -6,10 +6,8 @@ st.set_page_config(
     page_title="Study Helper AI",
     page_icon="📘",
     layout="centered",
-    initial_sidebar_state="collapsed",
 )
 
-# Keep your existing Gemini integration and secret
 client = OpenAI(
     api_key=st.secrets["API_KEY"],
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -17,133 +15,167 @@ client = OpenAI(
 
 MODEL = "gemini-3.8-flash"
 
+MODES = {
+    "Explain": {
+        "icon": "💡",
+        "description": "Understand difficult concepts simply.",
+        "instruction": (
+            "Explain the topic in simple language. Use clear headings, "
+            "step-by-step explanations, and practical examples."
+        ),
+    },
+    "Study Notes": {
+        "icon": "📝",
+        "description": "Create structured, exam-ready notes.",
+        "instruction": (
+            "Create well-organized study notes with headings, definitions, "
+            "key points, examples, and a short revision summary."
+        ),
+    },
+    "Flashcards": {
+        "icon": "🗂️",
+        "description": "Revise with questions and answers.",
+        "instruction": (
+            "Create 10 useful flashcards. Format each as a question followed "
+            "by its answer. Focus on important definitions, concepts, and facts."
+        ),
+    },
+    "Practice Quiz": {
+        "icon": "🧠",
+        "description": "Test yourself with multiple-choice questions.",
+        "instruction": (
+            "Create 5 multiple-choice questions with four options each. "
+            "Put the answer key and a short explanation after all questions "
+            "so the student can attempt them first."
+        ),
+    },
+}
+
 SYSTEM_PROMPT = (
-    "You are a friendly study helper for students. "
-    "Explain concepts simply, use examples, organize answers with headings "
-    "and bullet points when useful, and encourage learning."
+    "You are Study Helper AI, a friendly and accurate study tutor. "
+    "Help students learn rather than merely memorize. Use clear formatting, "
+    "correct mistakes gently, and never invent facts when uncertain."
 )
 
-# Clean white-and-blue styling
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+if "study_mode" not in st.session_state:
+    st.session_state.study_mode = "Explain"
+
+# White-and-blue theme with explicit text contrast
 st.markdown(
     """
     <style>
     .stApp {
-        background: #f7faff;
+        background: #F5F8FF;
+        color: #172B4D;
     }
 
     [data-testid="stHeader"] {
-        background: rgba(247, 250, 255, 0.95);
+        background: #F5F8FF;
     }
 
     .block-container {
-        max-width: 850px;
+        max-width: 900px;
         padding-top: 2rem;
         padding-bottom: 3rem;
     }
 
+    h1, h2, h3, p, label {
+        color: #172B4D;
+    }
+
     .hero {
-        background: linear-gradient(135deg, #ffffff, #eaf3ff);
-        border: 1px solid #d9e8ff;
+        background: linear-gradient(135deg, #FFFFFF, #EAF2FF);
+        border: 1px solid #D7E5F7;
         border-radius: 22px;
-        padding: 28px 26px;
+        padding: 26px;
         margin-bottom: 22px;
     }
 
     .hero h1 {
-        color: #153b70;
+        color: #16345C !important;
         font-size: 2.25rem;
         margin: 0 0 8px 0;
     }
 
     .hero p {
-        color: #55708f;
-        font-size: 1rem;
+        color: #526987 !important;
         margin: 0;
+        font-size: 1rem;
     }
 
     .section-label {
-        color: #244b7c;
-        font-weight: 650;
-        font-size: 1rem;
-        margin: 12px 0;
+        color: #16345C;
+        font-weight: 700;
+        font-size: 1.08rem;
+        margin: 18px 0 10px 0;
     }
 
     div.stButton > button {
+        width: 100%;
+        min-height: 48px;
+        background: #FFFFFF;
+        color: #16345C !important;
+        border: 1px solid #D0DFF3;
         border-radius: 12px;
-        border: 1px solid #cbdcf5;
-        background: white;
-        color: #204c83;
-        min-height: 46px;
-        transition: all 0.15s ease;
+        white-space: normal;
     }
 
     div.stButton > button:hover {
-        border-color: #4785dc;
-        background: #edf5ff;
-        color: #153b70;
+        background: #EAF2FF;
+        border-color: #2563EB;
+        color: #16345C !important;
     }
 
     div.stButton > button[kind="primary"] {
-        background: #2563eb;
-        color: white;
-        border: 1px solid #2563eb;
-    }
-
-    div.stButton > button[kind="primary"]:hover {
-        background: #1d4ed8;
-        color: white;
+        background: #2563EB;
+        border-color: #2563EB;
+        color: #FFFFFF !important;
     }
 
     [data-testid="stChatMessage"] {
-    border: 1px solid #d7e5f7;
-    border-radius: 16px;
-    padding: 12px 16px;
-    background: #ffffff;
-    color: #172b4d;
-}
+        background: #FFFFFF !important;
+        border: 1px solid #D7E5F7;
+        border-radius: 16px;
+        padding: 14px;
+        color: #172B4D !important;
+    }
 
-[data-testid="stChatMessage"] p,
-[data-testid="stChatMessage"] li,
-[data-testid="stChatMessage"] h1,
-[data-testid="stChatMessage"] h2,
-[data-testid="stChatMessage"] h3 {
-    color: #172b4d !important;
-}
-
-[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
-    color: #172b4d !important;
-}
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] li,
+    [data-testid="stChatMessage"] h1,
+    [data-testid="stChatMessage"] h2,
+    [data-testid="stChatMessage"] h3,
+    [data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+        color: #172B4D !important;
+    }
 
     [data-testid="stChatInput"] {
-        border-color: #cbdcf5;
+        border-color: #BFD3F2;
     }
 
     .footer {
         text-align: center;
-        color: #7185a0;
+        color: #647B99;
         font-size: 0.82rem;
-        padding-top: 20px;
+        padding-top: 24px;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Start or restore the conversation
-if "msgs" not in st.session_state:
-    st.session_state.msgs = [
-        {"role": "system", "content": SYSTEM_PROMPT}
-    ]
-
-# Header
-header_col, action_col = st.columns([5, 1.5])
+# Header and new-chat button
+header_col, action_col = st.columns([4, 1.4])
 
 with header_col:
     st.markdown(
         """
         <div class="hero">
             <h1>📘 Study Helper AI</h1>
-            <p>Your personal AI study partner. Learn smarter, one question at a time.</p>
+            <p>Your personal AI learning workspace. Learn smarter, one topic at a time.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -151,78 +183,99 @@ with header_col:
 
 with action_col:
     st.write("")
-    if st.button("＋ New chat", use_container_width=True):
-        st.session_state.msgs = [
-            {"role": "system", "content": SYSTEM_PROMPT}
-        ]
-        st.session_state.pop("pending_prompt", None)
+    if st.button("＋ New chat", key="new_chat"):
+        st.session_state.messages = []
+        st.session_state.study_mode = "Explain"
         st.rerun()
 
-# Quick prompts
+# Study mode selector
 st.markdown(
-    '<div class="section-label">✨ What would you like to study?</div>',
+    '<div class="section-label">What would you like to study?</div>',
     unsafe_allow_html=True,
 )
 
-prompts = [
-    ("💡 Explain a topic", "Explain a difficult topic in simple words with an example."),
-    ("📝 Make study notes", "Help me make clear, exam-ready study notes on a topic."),
-    ("🧠 Test my knowledge", "Quiz me on a topic with 5 questions, one at a time."),
-    ("📚 Give an example", "Teach me a concept using a practical, real-world example."),
-]
+mode_names = list(MODES.keys())
+mode_cols = st.columns(2)
 
-prompt_cols = st.columns(2)
+for index, mode in enumerate(mode_names):
+    with mode_cols[index % 2]:
+        selected = st.session_state.study_mode == mode
+        button_label = (
+            f"{MODES[mode]['icon']}  {mode}"
+            + ("  ✓" if selected else "")
+        )
 
-for i, (label, prompt_text) in enumerate(prompts):
-    with prompt_cols[i % 2]:
-        if st.button(label, key=f"quick_{i}", use_container_width=True):
-            st.session_state.pending_prompt = prompt_text
+        if st.button(
+            button_label,
+            key=f"mode_{mode}",
+            type="primary" if selected else "secondary",
+            help=MODES[mode]["description"],
+        ):
+            st.session_state.study_mode = mode
             st.rerun()
+
+active_mode = st.session_state.study_mode
+st.caption(
+    f"{MODES[active_mode]['icon']} {MODES[active_mode]['description']}"
+)
 
 st.divider()
 
 # Conversation history
-for message in st.session_state.msgs[1:]:
+for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Chat input and quick-prompt handling
-typed_prompt = st.chat_input("Ask a question or tell me what you're studying...")
+# Topic input
+topic = st.chat_input(
+    f"Enter a topic for {active_mode.lower()}..."
+)
 
-if "pending_prompt" in st.session_state:
-    question = st.session_state.pop("pending_prompt")
-else:
-    question = typed_prompt
+if topic:
+    user_message = (
+        f"Study mode: {active_mode}\n"
+        f"Topic or request: {topic}\n\n"
+        f"Instructions: {MODES[active_mode]['instruction']}"
+    )
 
-if question:
-    st.session_state.msgs.append(
-        {"role": "user", "content": question}
+    st.session_state.messages.append(
+        {"role": "user", "content": topic}
     )
 
     with st.chat_message("user"):
-        st.markdown(question)
+        st.markdown(f"**{active_mode}:** {topic}")
+
+    api_messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    for message in st.session_state.messages:
+        if message["role"] == "user" and message["content"] == topic:
+            api_messages.append(
+                {"role": "user", "content": user_message}
+            )
+        else:
+            api_messages.append(message)
 
     with st.chat_message("assistant"):
         try:
-            with st.spinner("Thinking through your question..."):
+            with st.spinner("Preparing your study material..."):
                 response = client.chat.completions.create(
                     model=MODEL,
-                    messages=st.session_state.msgs,
+                    messages=api_messages,
                 )
 
             answer = response.choices[0].message.content
             if not answer:
-                answer = "I couldn't generate a response. Please try again."
+                answer = "I couldn't generate an answer. Please try again."
 
             st.markdown(answer)
-            st.session_state.msgs.append(
+            st.session_state.messages.append(
                 {"role": "assistant", "content": answer}
             )
 
         except Exception:
             st.warning(
                 "I couldn't get a response right now. "
-                "Please try again in a moment. Your conversation is still here."
+                "Please try again in a moment."
             )
 
 st.markdown(
