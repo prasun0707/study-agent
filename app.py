@@ -338,6 +338,54 @@ if topic:
                 "Please try again in a moment."
             )
 
+# ---------- Daily Quote ----------
+DAILY_QUOTES = [
+    ("The secret of getting ahead is getting started.", "Mark Twain"),
+    ("It always seems impossible until it's done.", "Nelson Mandela"),
+    ("Great things are done by a series of small things brought together.", "Vincent van Gogh"),
+    ("Learning never exhausts the mind.", "Leonardo da Vinci"),
+    ("Success is the sum of small efforts, repeated day in and day out.", "Robert Collier"),
+    ("The beautiful thing about learning is that nobody can take it away from you.", "B.B. King"),
+    ("Believe you can and you're halfway there.", "Theodore Roosevelt"),
+]
+
+import datetime
+
+today = datetime.date.today()
+quote_index = today.toordinal() % len(DAILY_QUOTES)
+quote, author = DAILY_QUOTES[quote_index]
+
+st.markdown(
+    f"""
+    <div style="
+        background: #E4FBFA;
+        border: 1px solid #B8EEEA;
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-top: 22px;
+        margin-bottom: 18px;
+    ">
+        <div style="
+            color: #176B70;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        ">☀️ DAILY INSPIRATION</div>
+        <div style="
+            color: #173B4A;
+            font-size: 1.05rem;
+            font-weight: 600;
+        ">“{quote}”</div>
+        <div style="
+            color: #527B82;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        ">— {author}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 st.markdown(
     '<div class="footer">Made for curious minds · Keep learning, keep growing ✨</div>',
     unsafe_allow_html=True,
