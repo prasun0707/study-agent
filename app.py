@@ -95,11 +95,24 @@ st.markdown(
     }
 
     [data-testid="stChatMessage"] {
-        border: 1px solid #e1eaf7;
-        border-radius: 16px;
-        padding: 12px 16px;
-        background: white;
-    }
+    border: 1px solid #d7e5f7;
+    border-radius: 16px;
+    padding: 12px 16px;
+    background: #ffffff;
+    color: #172b4d;
+}
+
+[data-testid="stChatMessage"] p,
+[data-testid="stChatMessage"] li,
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 {
+    color: #172b4d !important;
+}
+
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+    color: #172b4d !important;
+}
 
     [data-testid="stChatInput"] {
         border-color: #cbdcf5;
